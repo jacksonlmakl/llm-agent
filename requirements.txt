@@ -34,3 +34,4 @@ datasets
 jupyter
 pandas 
 numpy
+duckdb

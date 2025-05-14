@@ -11,6 +11,22 @@ import duckdb
 from hash import generate_unique_hash
 
 db_conn = duckdb.connect('db.duckdb')
+db_conn.execute("""
+CREATE TABLE IF NOT EXISTS session (
+    session_id STRING PRIMARY KEY,
+    created_date TIMESTAMP DEFAULT current_localtimestamp()
+)
+""")
+db_conn.execute("""
+CREATE TABLE IF NOT EXISTS messages (
+    message_id STRING PRIMARY KEY,
+    session_id STRING,
+    role STRING,
+    content STRING,
+    created_date TIMESTAMP DEFAULT current_localtimestamp()
+)
+""")
+db_conn.commit()
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
