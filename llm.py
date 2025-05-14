@@ -178,8 +178,12 @@ class Model:
         prompt: str, 
         max_new_tokens: int = 100, 
         temperature: float = 0.1, 
-        typical_p: float = .9,
-        length_penalty: float = 1,
+        typical_p: float = -1,
+        length_penalty: float = -1,
+        top_p: float = .95,
+        top_k: float = 50,
+        no_repeat_ngram_size: float=3,
+        repetition_penalty: float =1.2,
         messages: List[Dict[str, str]] = None,
         **kwargs
     ) -> str:
@@ -226,17 +230,18 @@ class Model:
                 "max_new_tokens": max_new_tokens,
                 "temperature": temperature,
                 "do_sample": temperature > 0.01,  # Only sample if temperature is meaningful
-                "top_p": 0.95,
-                "top_k": 50,
-                "length_penalty":length_penalty,
-                "typical_p":typical_p,
-                "repetition_penalty": 1.2,  # Reduced from 1.4 for more natural responses
-                "no_repeat_ngram_size": 3,
+                "top_p": top_p,
+                "top_k": top_k,
+                "repetition_penalty": repetition_penalty,  # Reduced from 1.4 for more natural responses
+                "no_repeat_ngram_size": no_repeat_ngram_size,
                 "pad_token_id": self.tokenizer.pad_token_id,
                 "eos_token_id": self.tokenizer.eos_token_id,
                 "use_cache": True
             }
-            
+            if typical_p >0:
+                generate_kwargs['typical_p']=typical_p
+            if length_penalty >0:
+                generate_kwargs['length_penalty']=length_penalty
             # Update with any user-provided kwargs
             generate_kwargs.update(kwargs)
             
