@@ -3,3 +3,4 @@ env
 *.duckdb
 db.duckdb.wal
 db.ipynb
+vector_db
