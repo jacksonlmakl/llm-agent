@@ -22,7 +22,6 @@ class Model:
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
 
-
         # Load model with optimizations
         self.model = AutoModelForCausalLM.from_pretrained(
             self.model_name,
@@ -30,8 +29,13 @@ class Model:
             low_cpu_mem_usage=True,
         )
         self.model.to(device)
-    def generate(self,prompt,max_new_tokens=100,temperature=.1):
-        inputs = self.tokenizer(prompt, return_tensors="pt")
+    def generate(self,prompt,max_new_tokens=100,temperature=.1,messages=[]):
+        if messages:
+            chat_text = self.tokenizer.apply_chat_template(messages+[{"role":"user","content":prompt}], tokenize=False, add_generation_prompt=True)
+            inputs = self.tokenizer(chat_text, return_tensors="pt")
+            print('Applied additional messages')
+        else:
+            inputs = self.tokenizer(prompt, return_tensors="pt")
 
         # Move tensors to the right device
         input_ids = inputs["input_ids"].to(device)
