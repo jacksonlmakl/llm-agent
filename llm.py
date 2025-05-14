@@ -2,12 +2,15 @@ import os
 import gc
 import logging
 from typing import List, Dict, Union, Optional, Any
-
+import time
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from dotenv import load_dotenv
 from huggingface_hub import login as hf_login
+import duckdb
+from hash import generate_unique_hash
 
+db_conn = duckdb.connect('db.duckdb')
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -57,6 +60,14 @@ class Model:
             use_auth_token: Whether to use the HF_TOKEN for authentication
             cache_dir: Directory to cache models (defaults to HF cache)
         """
+        self.session_id=generate_unique_hash(model_name)
+        self.db_conn=db_conn
+        self.db_conn.execute(f"""
+            INSERT INTO session VALUES
+            ('{self.session_id}',current_localtimestamp())
+        """)
+        self.db_conn.commit()
+        
         self.model_name = model_name
         logger.info(f"Initializing model: {model_name}")
         
@@ -259,7 +270,21 @@ class Model:
                 output[0, input_length:], 
                 skip_special_tokens=True
             ).strip()
-            
+            # For the user message
+            message_id = generate_unique_hash(str(time.time()))
+            self.db_conn.execute("""
+                INSERT INTO messages (message_id, session_id, role, content, created_date) 
+                VALUES (?, ?, ?, ?, current_localtimestamp())
+            """, (message_id, self.session_id, 'user', prompt))
+            self.db_conn.commit()
+
+            # For the assistant message
+            message_id = generate_unique_hash(str(time.time()))
+            self.db_conn.execute("""
+                INSERT INTO messages (message_id, session_id, role, content, created_date) 
+                VALUES (?, ?, ?, ?, current_localtimestamp())
+            """, (message_id, self.session_id, 'assistant', response))
+            self.db_conn.commit()
             return response
             
         except Exception as e:
@@ -270,6 +295,7 @@ class Model:
         """
         Clean up resources when the object is destroyed.
         """
+        self.db_conn.close()
         try:
             if hasattr(self, 'model'):
                 # Clear from CUDA memory if applicable

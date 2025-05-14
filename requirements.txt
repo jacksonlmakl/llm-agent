@@ -32,3 +32,5 @@ fsspec
 huggingface_hub
 datasets
 jupyter
+pandas 
+numpy
