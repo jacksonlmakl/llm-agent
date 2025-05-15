@@ -35,3 +35,4 @@ jupyter
 pandas 
 numpy
 duckdb
+ipython
